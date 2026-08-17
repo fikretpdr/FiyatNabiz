@@ -171,4 +171,18 @@ app.get('/api/settings',(req,res)=>res.json({ok:true,settings}));
 app.post('/api/settings',(req,res)=>{const body=req.body||{};if(body.interval!==undefined)settings.interval=Math.max(0,Math.min(1440,Number(body.interval)||0));if(body.batch!==undefined)settings.batch=Math.max(1,Math.min(CATEGORIES.length,Number(body.batch)||DEFAULT_BATCH));if(body.sources)for(const k of Object.keys(SOURCE_DEFAULTS))if(body.sources[k]!==undefined)settings.sources[k]=Boolean(body.sources[k]);saveSettings();restartTimer();res.json({ok:true,settings});});
 app.post('/api/demo', (req,res)=>{const now=Date.now(),old=new Date(now-70*60000).toISOString(),neu=new Date(now-5*60000).toISOString(),a='demo-a-'+now,b='demo-b-'+now;run(`INSERT OR IGNORE INTO products(marketplace,external_id,title,brand,url,image,category,current_price,first_seen_at,last_seen_at) VALUES('Trendyol','demo-rtx-4070','Demo RTX 4070 Ekran Kartı','Demo','https://www.trendyol.com/','','Ekran Kartı',24999,:o,:n)`,{':o':old,':n':neu});const p=one(`SELECT * FROM products WHERE external_id='demo-rtx-4070'`);run(`INSERT INTO price_history(product_id,price,recorded_at,scan_id) VALUES(:id,52000,:t,:s)`,{':id':p.id,':t':old,':s':a});run(`INSERT INTO price_history(product_id,price,recorded_at,scan_id) VALUES(:id,24999,:t,:s)`,{':id':p.id,':t':neu,':s':b});saveDb();res.json({ok:true,stats:stats(req.query.threshold)});});
 app.get('/api/history/:id',(req,res)=>res.json({ok:true,rows:all(`SELECT price,recorded_at,scan_id FROM price_history WHERE product_id=:id ORDER BY recorded_at DESC,id DESC LIMIT 200`,{':id':Number(req.params.id)})}));
-initDb().then(()=>{app.listen(PORT,()=>console.log(`FiyatNabiz v13.3: http://127.0.0.1:${PORT}`));restartTimer();require('./telegram');}).catch(e=>{console.error(e);process.exit(1);});
+initDb().then(()=>{
+  app.listen(PORT,()=>console.log(`FiyatNabiz v13.3: http://127.0.0.1:${PORT}`));
+  restartTimer();
+
+  require('./telegram')({
+    stats,
+    scanNow,
+    get scanning() {
+      return scanning;
+    }
+  });
+}).catch(e=>{
+  console.error(e);
+  process.exit(1);
+});
