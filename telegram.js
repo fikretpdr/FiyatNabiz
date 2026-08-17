@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-
+module.exports = ({ stats, scanNow, scanning }) => {
 const TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const ALLOWED_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || '').trim();
 
@@ -165,3 +165,4 @@ if (!TOKEN) {
 }
 
 module.exports = null;
+  };
